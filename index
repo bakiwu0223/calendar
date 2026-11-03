@@ -1,2 +1,433 @@
-# calendar
-calendar
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>becky專案月曆</title>
+<style>
+:root{--ink:#27313d;--muted:#697584;--line:#dfe5eb;--bg:#f5f7fa;--accent:#365e8d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;font-size:14px}
+button,input,select,textarea{font:inherit}
+button,.filebtn{cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:9px 13px}
+button:hover,.filebtn:hover{background:#edf2f7}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #9fbfe1;outline-offset:2px}
+.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.primary:hover{background:#294e79}
+.wrap{max-width:1700px;margin:auto;padding:24px}
+header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+h1{font-size:26px;letter-spacing:-.6px;margin:0}
+.sub{color:var(--muted);margin:7px 0 0;font-size:13px}
+.actions,.nav,.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:18px}
+.notice{background:#eef3f9;color:#3b526d;border-radius:10px;padding:12px 15px;margin-top:16px;line-height:1.7}
+.filters{display:grid;grid-template-columns:1fr 1fr 1fr 1.5fr auto;gap:12px;align-items:end}
+label.field{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+input,select,textarea{border:1px solid #ccd5df;border-radius:8px;padding:9px 10px;background:#fff;color:var(--ink);width:100%;min-width:0}
+input[type=checkbox]{width:auto;accent-color:var(--accent)}
+textarea{resize:vertical;min-height:85px}
+.monthbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:21px 0 12px}
+.monthbar h2{font-size:23px;margin:0;min-width:155px;text-align:center}
+#month{width:158px}
+#summary{color:var(--muted);font-size:13px}
+.legend{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.legend button{padding:5px 9px;font-size:12px;border-left:5px solid var(--p);background:var(--pbg)}
+.legend button.active{outline:2px solid var(--p);outline-offset:1px}
+.calendar-shell{overflow:auto;border-radius:12px;border:1px solid var(--line);background:white}
+.weekhead,.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-width:850px}
+.weekhead{background:#eef2f6}
+.weekhead div{padding:11px;text-align:center;font-size:12px;font-weight:650;border-right:1px solid var(--line)}
+.day{min-height:150px;border-top:1px solid var(--line);border-right:1px solid var(--line);padding:7px;min-width:0}
+.day:nth-child(7n){border-right:0}
+.day.out{background:#f8fafc}
+.day.out .daynum{color:#9ca5af}
+.daytop{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.daynum{font-weight:700;border:0;background:transparent;padding:3px 6px;border-radius:6px}
+.daynum.today{background:var(--accent);color:white}
+.addday{border:0;background:transparent;color:#8591a0;padding:2px 7px;font-size:18px}
+.card{margin-bottom:7px;border:1px solid var(--pborder);border-left:4px solid var(--p);border-radius:8px;background:var(--pbg);padding:8px;color:#25313c;overflow-wrap:anywhere}
+.card.done{opacity:.65}
+.card.done .task{text-decoration:line-through}
+.cardhead{display:flex;justify-content:space-between;align-items:start;gap:6px}
+.project{font-size:12px;font-weight:750;color:var(--p)}
+.cardopen{display:block;width:100%;text-align:left;padding:0;background:transparent;border:0;border-radius:0}
+.cardopen:hover{background:transparent}
+.task{font-size:13px;line-height:1.55;margin:5px 0}
+.meta{font-size:11px;color:#596574;line-height:1.6}
+.checkline{display:flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap}
+.empty{padding:38px 20px;text-align:center;color:var(--muted);line-height:1.9;background:#fff;border:1px dashed #ccd6e0;border-radius:12px;margin-top:14px}
+#empty[hidden], [hidden]{display:none!important}
+.list{display:grid;gap:9px}
+.list .card{display:grid;grid-template-columns:105px 1fr auto;gap:14px;margin:0}
+.listdate{font-weight:650;font-size:13px}
+.footer{font-size:12px;color:var(--muted);line-height:1.8;margin-top:16px}
+dialog{border:1px solid var(--line);border-radius:16px;padding:0;width:min(630px,calc(100% - 24px));max-height:90vh;color:var(--ink);box-shadow:0 20px 70px #23354a33}
+dialog::backdrop{background:#172b4566}
+.modalhead{padding:19px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modalhead h2{font-size:19px;margin:0}
+.formbody{padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.full{grid-column:1/-1}
+.modalfoot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.danger{color:#a83535}
+#status{white-space:pre-wrap;max-height:180px;overflow:auto;font-size:12px;line-height:1.8}
+#status:empty{display:none}
+#formerror{color:#a83535;white-space:pre-wrap}
+#deleteask{padding:10px;background:#fff1ef;border-radius:8px;color:#8a3434}
+.filebtn{display:inline-flex;align-items:center;gap:6px}
+.badge{border-radius:5px;background:#ffffffa6;padding:1px 5px}
+@media(max-width:800px){.filters{grid-template-columns:1fr 1fr}.filters .search{grid-column:1/-1}.wrap{padding:15px}header .actions{width:100%}h1{font-size:23px}.list .card{grid-template-columns:82px 1fr}.list .checkline{grid-column:2}.monthbar{align-items:start}}
+@media(max-width:440px){.filters{grid-template-columns:1fr}.filters .search{grid-column:auto}.formbody{grid-template-columns:1fr}.full{grid-column:auto}.actions button,.filebtn{font-size:12px;padding:9px 10px}.nav{gap:4px}.monthbar h2{font-size:20px;min-width:135px}}
+@media print{
+@page{size:A3 landscape;margin:9mm}
+body{background:#fff}.wrap{padding:0;max-width:none}
+.actions,.filters,.notice,.legend,.nav button,.tools,.footer,#status,.addday,#empty{display:none!important}
+.panel{padding:0;border:0;margin:0}.monthbar{margin:12px 0}header{margin-bottom:10px}
+.calendar-shell{overflow:visible}.weekhead,.calendar{min-width:0}
+.day{min-height:100px;break-inside:avoid}.card{break-inside:avoid;padding:5px;font-size:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.task{font-size:10px}.meta,.project,.checkline{font-size:9px}.list .card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div><h1>becky 專案月曆</h1><p class="sub">專案各自分色 · 卡片分類 · 完成核實 · 離線使用</p></div>
+<div class="actions">
+<label class="filebtn">匯入 XLSX<input id="files" type="file" accept=".xlsx" multiple hidden></label>
+<button class="primary" id="add">＋ 新增卡片</button>
+<button id="save">下載含資料 HTML</button>
+<button id="export">匯出卡片 CSV</button>
+<button id="print">列印</button>
+</div>
+</header>
+<div id="intro" class="notice">先匯入《卡片總表.xlsx》載入完整卡片。可多選檔案、分次追加；所有資料只在本頁處理，不會上傳。修改後請下載含資料 HTML 保存，重新整理不會自動保存。</div>
+<div class="panel">
+<div class="filters">
+<label class="field">專案<select id="projectFilter"><option value="">全部專案</option></select></label>
+<label class="field">卡片類型<select id="typeFilter"><option value="">全部類型</option></select></label>
+<label class="field">完成核實<select id="doneFilter"><option value="">全部狀態</option><option value="no">尚未核實</option><option value="yes">已完成核實</option></select></label>
+<label class="field search">搜尋卡片<input id="search" placeholder="專案、任務、編號、說明…" type="search"></label>
+<button id="reset">清除篩選</button>
+</div>
+<div class="legend" id="legend" aria-label="專案配色與快速篩選"></div>
+</div>
+<div id="status" class="notice" role="status" aria-live="polite"></div>
+<div class="monthbar">
+<div class="nav">
+<button id="prev" aria-label="上個月">‹</button>
+<h2 id="monthTitle"></h2>
+<button id="next" aria-label="下個月">›</button>
+<input id="month" type="month" aria-label="選擇月份">
+<button id="today">本月</button>
+</div>
+<div class="tools">
+<span id="summary"></span>
+<select id="view" aria-label="檢視模式"><option value="calendar">月曆檢視</option><option value="list">當月清單</option></select>
+</div>
+</div>
+<div class="calendar-shell" id="calendarShell">
+<div class="weekhead"><div>星期一</div><div>星期二</div><div>星期三</div><div>星期四</div><div>星期五</div><div>星期六</div><div>星期日</div></div>
+<div class="calendar" id="calendar"></div>
+</div>
+<div id="list" class="list" hidden></div>
+<div id="empty" class="empty" hidden></div>
+<p class="footer">點卡片可查看／編輯完整欄位，點日期旁的「＋」可新增當日卡片。匯入以檔案原日期、原分類為準，不重排排程，也不刪除內容相似的卡片。同一檔案重複匯入會再追加，請留意匯入訊息。列印使用目前月份與篩選條件，建議 A3 橫向。</p>
+</div>
+
+<dialog id="editor">
+<form id="cardForm">
+<div class="modalhead"><h2 id="editorTitle">新增卡片</h2><button type="button" id="closeEditor" aria-label="關閉">✕</button></div>
+<div class="formbody">
+<label class="field">專案<input id="fProject" list="projectOptions" required placeholder="選取或輸入新專案"><datalist id="projectOptions"></datalist></label>
+<label class="field">卡片類型<input id="fType" list="typeOptions" required placeholder="選取或輸入新類型"><datalist id="typeOptions"></datalist></label>
+<label class="field full">項目／任務<input id="fTask" list="taskOptions" required placeholder="選取既有項目，或輸入新項目"><datalist id="taskOptions"></datalist></label>
+<label class="field">日期<input id="fDate" type="date" required></label>
+<label class="field">時間<input id="fTime" placeholder="例如：15:00–16:00"></label>
+<label class="field">卡片編號<input id="fId" placeholder="留白將自動產生手動卡片編號"></label>
+<label class="field">CUE表編號<input id="fCue"></label>
+<label class="field full">階段<input id="fStage"></label>
+<label class="field full">說明<textarea id="fNote"></textarea></label>
+<label class="field full">本次異動<input id="fChange"></label>
+<label class="checkline full"><input id="fDone" type="checkbox">完成核實</label>
+<div id="formerror" class="full" role="status"></div>
+<div class="full" id="deleteask" hidden>確定刪除這張卡片？此動作不影響原始 Excel。
+<div class="actions" style="margin-top:8px"><button type="button" id="deleteYes" class="danger">確定刪除</button><button type="button" id="deleteNo">取消</button></div>
+</div>
+</div>
+<div class="modalfoot">
+<button type="button" class="danger" id="delete">刪除卡片</button>
+<div class="actions"><button type="button" id="cancel">取消</button><button type="submit" class="primary">儲存卡片</button></div>
+</div>
+</form>
+</dialog>
+
+<script type="application/json" id="savedData">{"cards":[],"imports":[],"month":""}</script>
+<script>
+"use strict";
+const BASE_PROJECTS=["Threads情報創作者經營","nac1","nac2","大井","大成","宇勝","宇足","安寶","寶貝可愛（未分碼）","展晟照明","廣和","拓霖","晶采","法兒貝","美無痕","美藍雷","設計先生","黃裳元吉"];
+const BASE_TYPES=["其他事項","客回","客審","文案上線","會議","檢查","派案寫手","熱門文章客回／截止確認上線","熱門文章搜尋"];
+const PALETTE=["#3366CC","#DD3366","#25846B","#946200","#777720","#8B4DB0","#34798C","#B85A2A","#00799E","#666666","#A34CA3","#666600","#B45A00","#238548","#B12C58","#4778A8","#927023","#663399"];
+const FIELDS=["卡片編號","日期","星期","專案","分類","任務","CUE表編號","時間","階段","說明","本次異動","完成核實"];
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const dateKey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const monthKey=d=>dateKey(d).slice(0,7);
+const TODAY=dateKey(new Date());
+const WEEK=["日","一","二","三","四","五","六"];
+const DATA=JSON.parse($("savedData").textContent);
+let cards=Array.isArray(DATA.cards)?DATA.cards:[];
+let imports=Array.isArray(DATA.imports)?DATA.imports:[];
+let currentMonth=monthKey(new Date());
+let editKey=null,dirty=false,busy=false;
+function uid(){return globalThis.crypto&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2)}
+cards.forEach(c=>{if(!c.key)c.key=uid()});
+function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
+function uniques(v){return [...new Set(v.filter(Boolean))].sort((a,b)=>a.localeCompare(b,"zh-Hant"))}
+function projects(){return uniques([...BASE_PROJECTS,...cards.map(c=>c.project)])}
+function types(){return uniques([...BASE_TYPES,...cards.map(c=>c.type)])}
+function color(p){let i=BASE_PROJECTS.indexOf(p);if(i>=0)return PALETTE[i];let h=0;for(const x of p)h=(h*31+x.charCodeAt(0))>>>0;return "hsl("+(h%360)+" 43% 36%)"}
+function paint(node,p){const c=color(p);node.style.setProperty("--p",c);node.style.setProperty("--pbg","color-mix(in srgb, "+c+" 9%, white)");node.style.setProperty("--pborder","color-mix(in srgb, "+c+" 27%, white)")}
+function options(id,values,first){const s=$(id),old=s.value;s.replaceChildren();if(first!==undefined){const o=el("option","",first);o.value="";s.append(o)}for(const v of values){const o=el("option","",v);o.value=v;s.append(o)}if(values.includes(old))s.value=old}
+function refreshOptions(){
+ options("projectFilter",projects(),"全部專案");options("typeFilter",types(),"全部類型");
+ options("projectOptions",projects());options("typeOptions",types());taskOptions();
+}
+function taskOptions(){const p=$("fProject").value.trim();options("taskOptions",uniques(cards.filter(c=>!p||c.project===p).map(c=>c.task)))}
+function setDirty(){dirty=true;$("save").textContent="下載含資料 HTML ●"}
+function matches(c){
+ const p=$("projectFilter").value,t=$("typeFilter").value,d=$("doneFilter").value,q=$("search").value.trim().toLocaleLowerCase();
+ return (!p||c.project===p)&&(!t||c.type===t)&&(!d||(d==="yes")===!!c.done)&&(!q||[c.id,c.project,c.type,c.task,c.note,c.stage,c.cue,c.time].join(" ").toLocaleLowerCase().includes(q));
+}
+function sorted(a){return a.sort((x,y)=>x.date.localeCompare(y.date)||(x.time||"").localeCompare(y.time||"",undefined,{numeric:true})||(x.id||"").localeCompare(y.id||"",undefined,{numeric:true}))}
+function cardNode(c,list=false){
+ const box=el("article","card"+(c.done?" done":""));paint(box,c.project);
+ const open=el("button","cardopen");open.type="button";open.title="查看及編輯卡片";open.onclick=()=>openEditor(c.key);
+ const heading=el("div","project",c.project);open.append(heading,el("div","task",c.task));
+ const m=[c.type,c.time,c.stage].filter(Boolean).join(" · ");
+ open.append(el("div","meta",m),el("div","meta",c.id||"未填編號"));
+ const check=el("label","checkline");const cb=el("input");cb.type="checkbox";cb.checked=!!c.done;cb.onchange=()=>{c.done=cb.checked;setDirty();render()};
+ check.append(cb,document.createTextNode("完成核實"));
+ if(list){box.append(el("div","listdate",c.date.replaceAll("-","/")),open,check)}
+ else{const top=el("div","cardhead");top.append(el("span","badge",c.type),check);box.append(top,open)}
+ return box;
+}
+function render(){
+ $("month").value=currentMonth;const [y,m]=currentMonth.split("-").map(Number);
+ $("monthTitle").textContent=y+" 年 "+m+" 月";
+ const visible=sorted(cards.filter(matches)),inMonth=visible.filter(c=>c.date.startsWith(currentMonth));
+ const completed=inMonth.filter(c=>c.done).length;
+ $("summary").textContent="當月 "+inMonth.length.toLocaleString()+" 張 · 已核實 "+completed.toLocaleString()+" 張 · 總資料 "+cards.length.toLocaleString()+" 張";
+ const legend=$("legend");legend.replaceChildren();
+ for(const p of projects()){const b=el("button",$("projectFilter").value===p?"active":"",p);paint(b,p);b.onclick=()=>{$("projectFilter").value=$("projectFilter").value===p?"":p;render()};legend.append(b)}
+ const calendar=$("calendar");calendar.replaceChildren();
+ const first=new Date(y,m-1,1),start=new Date(y,m-1,1-((first.getDay()+6)%7));
+ const days=new Date(y,m,0).getDate(),cells=Math.ceil((((first.getDay()+6)%7)+days)/7)*7;
+ const byDay=new Map();for(const c of visible){if(!byDay.has(c.date))byDay.set(c.date,[]);byDay.get(c.date).push(c)}
+ for(let i=0;i<cells;i++){
+  const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i),k=dateKey(d),out=d.getMonth()!==m-1;
+  const cell=el("div","day"+(out?" out":""));const top=el("div","daytop");
+  const num=el("button","daynum"+(k===TODAY?" today":""),out?(d.getMonth()+1)+"/"+d.getDate():String(d.getDate()));
+  num.title="新增 "+k+" 卡片";num.onclick=()=>openEditor(null,k);
+  const plus=el("button","addday","＋");plus.title="新增 "+k+" 卡片";plus.onclick=()=>openEditor(null,k);
+  top.append(num,plus);cell.append(top);for(const c of byDay.get(k)||[])cell.append(cardNode(c));calendar.append(cell);
+ }
+ $("list").replaceChildren(...inMonth.map(c=>cardNode(c,true)));
+ const isList=$("view").value==="list";$("list").hidden=!isList;$("calendarShell").hidden=isList;
+ $("empty").hidden=inMonth.length>0;
+ $("empty").textContent=cards.length?"這個月份沒有符合篩選條件的卡片。可切換月份、清除篩選，或新增卡片。":"尚未載入卡片。請按「匯入 XLSX」選擇卡片總表，或按「新增卡片」手動建立。";
+ $("intro").textContent=cards.length?"資料已載入。專案顏色跨月份保持一致；nac1、nac2 分開顯示。新增、核實或修改後，請下載含資料 HTML 保存。":"先匯入《卡片總表.xlsx》載入完整卡片。可多選檔案、分次追加；所有資料只在本頁處理，不會上傳。修改後請下載含資料 HTML 保存，重新整理不會自動保存。";
+}
+function openEditor(key=null,date=null){
+ editKey=key;const c=key?cards.find(x=>x.key===key):null;
+ $("cardForm").reset();$("formerror").textContent="";$("deleteask").hidden=true;
+ $("editorTitle").textContent=c?"編輯卡片":"新增卡片";$("delete").hidden=!c;
+ const vals={fProject:c?.project||$("projectFilter").value,fType:c?.type||$("typeFilter").value||"其他事項",fTask:c?.task||"",fDate:c?.date||date||(TODAY.startsWith(currentMonth)?TODAY:currentMonth+"-01"),fTime:c?.time||"",fId:c?.id||"",fCue:c?.cue||"",fStage:c?.stage||"",fNote:c?.note||"",fChange:c?.change||"手動新增"};
+ for(const [id,v] of Object.entries(vals))$(id).value=v;
+ $("fDone").checked=!!c?.done;taskOptions();$("editor").showModal();
+}
+$("cardForm").onsubmit=e=>{
+ e.preventDefault();const project=$("fProject").value.trim(),type=$("fType").value.trim(),task=$("fTask").value.trim(),date=$("fDate").value;
+ if(!project||!type||!task||!validDate(date)){$("formerror").textContent="請填寫專案、類型、項目及有效日期。";return}
+ const old=editKey?cards.find(c=>c.key===editKey):null;
+ let id=$("fId").value.trim();
+ if(!id){let n=1;while(cards.some(c=>c.id==="M"+String(n).padStart(4,"0")))n++;id="M"+String(n).padStart(4,"0")}
+ const obj={...(old||{}),key:editKey||uid(),id,date,project,type,task,time:$("fTime").value.trim(),cue:$("fCue").value.trim(),stage:$("fStage").value.trim(),note:$("fNote").value,change:$("fChange").value.trim(),done:$("fDone").checked};
+ if(old)cards[cards.findIndex(c=>c.key===editKey)]=obj;else cards.push(obj);
+ currentMonth=date.slice(0,7);setDirty();refreshOptions();render();$("editor").close();
+ $("status").textContent="已"+(old?"更新":"新增")+"卡片："+id+"。請下載含資料 HTML 保存。";
+};
+for(const id of ["closeEditor","cancel"])$(id).onclick=()=>$("editor").close();
+$("fProject").oninput=taskOptions;
+$("delete").onclick=()=>{$("deleteask").hidden=false};
+$("deleteNo").onclick=()=>{$("deleteask").hidden=true};
+$("deleteYes").onclick=()=>{cards=cards.filter(c=>c.key!==editKey);setDirty();refreshOptions();render();$("editor").close();$("status").textContent="卡片已刪除。請下載含資料 HTML 保存。"};
+$("add").onclick=()=>openEditor();
+function move(n){const [y,m]=currentMonth.split("-").map(Number);currentMonth=monthKey(new Date(y,m-1+n,1));render()}
+$("prev").onclick=()=>move(-1);$("next").onclick=()=>move(1);
+$("today").onclick=()=>{currentMonth=monthKey(new Date());render()};
+$("month").onchange=()=>{if(/^\d{4}-\d{2}$/.test($("month").value)){currentMonth=$("month").value;render()}};
+for(const id of ["projectFilter","typeFilter","doneFilter","view"])$(id).onchange=render;
+$("search").oninput=render;
+$("reset").onclick=()=>{for(const id of ["projectFilter","typeFilter","doneFilter","search"])$(id).value="";render()};
+$("print").onclick=()=>window.print();
+
+function download(name,content,mime){
+ const url=URL.createObjectURL(new Blob([content],{type:mime})),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),20000);
+}
+$("save").onclick=()=>{
+ const root=document.documentElement.cloneNode(true);
+ const snapshot={cards,imports,month:currentMonth};
+ root.querySelector("#savedData").textContent=JSON.stringify(snapshot).replace(/</g,"\\u003c");
+ root.querySelector("#editor").removeAttribute("open");
+ root.querySelector("#files").removeAttribute("disabled");
+ root.querySelector("#status").textContent="";
+ root.querySelector("#save").textContent="下載含資料 HTML";
+ download("becky專案月曆.html","<!doctype html>\n"+root.outerHTML,"text/html;charset=utf-8");
+ dirty=false;$("save").textContent="下載含資料 HTML";
+ $("status").textContent="已送出下載。請保留新下載的 HTML；下次開啟該檔即可還原本次所有卡片。";
+};
+$("export").onclick=()=>{
+ const quote=v=>'"'+String(v??"").replaceAll('"','""')+'"';
+ const rows=sorted([...cards]).map(c=>[c.id,c.date.replaceAll("-","/"),WEEK[new Date(c.date+"T12:00:00").getDay()],c.project,c.type,c.task,c.cue,c.time,c.stage,c.note,c.change,c.done?"已核實":""]);
+ download("becky卡片總表.csv","\ufeff"+[FIELDS,...rows].map(r=>r.map(quote).join(",")).join("\r\n"),"text/csv;charset=utf-8");
+};
+window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
+
+/* 不使用外部套件：讀取 XLSX ZIP、共用字串、工作表及 Excel 日期。 */
+function validDate(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const d=new Date(s+"T12:00:00");return !isNaN(d)&&dateKey(d)===s}
+function normalDate(v,date1904=false){
+ const s=String(v??"").trim();if(!s)return "";
+ if(/^\d+(\.\d+)?$/.test(s)){
+  const n=Number(s);if(n>0&&n<1000000){const d=new Date(Date.UTC(date1904?1904:1899,date1904?0:11,date1904?1:30)+Math.floor(n)*86400000);const k=d.toISOString().slice(0,10);return validDate(k)?k:""}
+ }
+ const m=s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:[T\s].*)?$/);
+ if(m){const k=m[1]+"-"+pad(m[2])+"-"+pad(m[3]);return validDate(k)?k:""}
+ return "";
+}
+function xml(text){
+ const doc=new DOMParser().parseFromString(text,"application/xml");
+ if(doc.getElementsByTagName("parsererror").length)throw Error("檔案 XML 內容無法解析");
+ return doc;
+}
+function elements(node,name){return Array.from(node.getElementsByTagNameNS("*",name))}
+function textRuns(node){return elements(node,"t").map(n=>n.textContent).join("")}
+function resolvePath(base,target){
+ if(target.startsWith("/"))return target.slice(1);
+ const arr=(base.slice(0,base.lastIndexOf("/")+1)+target).split("/"),out=[];
+ for(const part of arr){if(part==="..")out.pop();else if(part&&part!==".")out.push(part)}
+ return out.join("/");
+}
+async function unzip(file){
+ const buf=await file.arrayBuffer(),b=new Uint8Array(buf),v=new DataView(buf);
+ let end=-1;
+ for(let i=b.length-22;i>=Math.max(0,b.length-65557);i--)if(v.getUint32(i,true)===0x06054b50){end=i;break}
+ if(end<0)throw Error("不是有效 XLSX，或檔案已加密；請另存為未加密 .xlsx");
+ const count=v.getUint16(end+10,true),offset=v.getUint32(end+16,true);
+ if(offset===0xffffffff||count===0xffff)throw Error("此頁不支援 ZIP64 格式的超大型活頁簿");
+ const entries=new Map(),decoder=new TextDecoder("utf-8");let p=offset;
+ for(let i=0;i<count;i++){
+  if(p+46>b.length||v.getUint32(p,true)!==0x02014b50)throw Error("XLSX 壓縮目錄損壞");
+  const flags=v.getUint16(p+8,true),method=v.getUint16(p+10,true),size=v.getUint32(p+20,true),raw=v.getUint32(p+24,true),nl=v.getUint16(p+28,true),ex=v.getUint16(p+30,true),co=v.getUint16(p+32,true),local=v.getUint32(p+42,true);
+  const name=decoder.decode(b.slice(p+46,p+46+nl));
+  entries.set(name,{flags,method,size,raw,local});p+=46+nl+ex+co;
+ }
+ const cache=new Map();
+ async function read(name){
+  if(cache.has(name))return cache.get(name);
+  const e=entries.get(name);if(!e)return null;
+  if(e.flags&1)throw Error("檔案已加密，請使用未加密 XLSX");
+  if(e.raw>100*1024*1024)throw Error("單一工作表過大，請拆成較小檔案");
+  const at=e.local;if(at+30>b.length||v.getUint32(at,true)!==0x04034b50)throw Error("壓縮檔內容損壞");
+  const start=at+30+v.getUint16(at+26,true)+v.getUint16(at+28,true),compressed=b.slice(start,start+e.size);
+  let bytes;
+  if(e.method===0)bytes=compressed;
+  else if(e.method===8){
+   let stream;
+   try{stream=new DecompressionStream("deflate-raw")}catch{throw Error("瀏覽器不支援本機 XLSX 解壓縮，請改用新版 Chrome 或 Edge")}
+   bytes=new Uint8Array(await new Response(new Blob([compressed]).stream().pipeThrough(stream)).arrayBuffer());
+  }else throw Error("不支援此 XLSX 壓縮方式");
+  const text=decoder.decode(bytes);cache.set(name,text);return text;
+ }
+ return {read,entries};
+}
+function colIndex(ref){let n=0;for(const c of ref.replace(/[0-9]/g,""))n=n*26+c.charCodeAt(0)-64;return n-1}
+function worksheetRows(doc,shared){
+ const data=elements(doc,"sheetData")[0];if(!data)return [];
+ return elements(data,"row").map(row=>{
+  const a=[];let next=0;
+  for(const c of elements(row,"c")){
+   const ref=c.getAttribute("r"),i=ref?colIndex(ref):next;next=i+1;
+   const type=c.getAttribute("t"),val=elements(c,"v")[0]?.textContent??"";
+   a[i]=type==="s"?(shared[Number(val)]??""):type==="inlineStr"?textRuns(c):val;
+  }return {values:a,row:row.getAttribute("r")||""};
+ });
+}
+const trimHeader=s=>String(s??"").replace(/^\ufeff/,"").replace(/\s/g,"");
+async function readCards(file){
+ const z=await unzip(file);
+ const wbText=await z.read("xl/workbook.xml"),relText=await z.read("xl/_rels/workbook.xml.rels");
+ if(!wbText||!relText)throw Error("找不到 Excel 活頁簿結構，請另存為 .xlsx");
+ const wb=xml(wbText),rels=xml(relText),relMap=new Map();
+ for(const r of elements(rels,"Relationship"))if(r.getAttribute("TargetMode")!=="External")relMap.set(r.getAttribute("Id"),resolvePath("xl/workbook.xml",r.getAttribute("Target")));
+ const sheets=elements(wb,"sheet").map(s=>({name:s.getAttribute("name"),path:relMap.get(s.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id")||s.getAttribute("r:id"))})).filter(s=>s.path);
+ const date1904=["1","true"].includes(elements(wb,"workbookPr")[0]?.getAttribute("date1904"));
+ const sharedText=await z.read("xl/sharedStrings.xml");
+ const shared=sharedText?elements(xml(sharedText),"si").map(textRuns):[];
+ const preferred=sheets.find(s=>s.name==="卡片總表")||sheets.find(s=>s.name==="月曆保留卡片");
+ const candidates=preferred?[preferred]:sheets;
+ const output=[],used=[],errors=[];
+ for(const s of candidates){
+  const content=await z.read(s.path);if(!content)continue;
+  const rows=worksheetRows(xml(content),shared);
+  const headerIndex=rows.findIndex((r,i)=>i<30&&["日期","專案"].every(k=>r.values.map(trimHeader).includes(k))&&r.values.map(trimHeader).some(k=>["任務","任務名稱","項目"].includes(k)));
+  if(headerIndex<0)continue;
+  const headers=rows[headerIndex].values.map(trimHeader);
+  function get(row,names){for(const name of names){const i=headers.indexOf(name);if(i>=0)return String(row[i]??"").trim()}return ""}
+  let count=0;
+  for(const record of rows.slice(headerIndex+1)){
+   const r=record.values;
+   if(!r.some(x=>String(x??"").trim()))continue;
+   const id=get(r,["卡片編號"]),rawDate=get(r,["日期"]),project=get(r,["專案"]),task=get(r,["任務","任務名稱","項目"]);
+   if(!id&&!rawDate&&!project&&!task)continue;
+   const date=normalDate(rawDate,date1904);
+   if(!date||!project||!task){errors.push(s.name+" 第 "+record.row+" 列："+(!date?"日期無效或缺漏；請使用完整年月日":!project?"缺少專案":"缺少任務／項目"));continue}
+   const doneValue=get(r,["完成核實"]);
+   output.push({key:uid(),id,date,project,type:get(r,["分類","卡片類型","類型"])||"未分類",task,cue:get(r,["CUE表編號"]),time:get(r,["時間"]),stage:get(r,["階段"]),note:get(r,["說明"]),change:get(r,["本次異動"]),done:/^(true|1|是|已完成|已核實|完成|已完成核實|✓|☑)$/i.test(doneValue),source:file.name,sheet:s.name});
+   count++;
+  }
+  used.push(s.name+"："+count.toLocaleString()+" 張");
+ }
+ if(errors.length)throw Error("此檔未匯入，避免漏卡。請修正後重試：\n"+errors.slice(0,12).join("\n")+(errors.length>12?"\n另有其他欄位異常，請檢查原檔。":""));
+ if(!used.length)throw Error("找不到卡片明細表。需包含「日期、專案、任務（或項目）」欄位；分類可使用「分類」或「卡片類型」");
+ if(!output.length)throw Error("明細表內沒有可匯入的卡片");
+ return {cards:output,sheets:used};
+}
+$("files").onchange=async e=>{
+ const files=Array.from(e.target.files||[]);if(!files.length||busy)return;
+ busy=true;$("files").disabled=true;
+ const logs=[];let firstNew=null,total=0;
+ try{
+  for(const file of files){
+   $("status").textContent=[...logs,"正在讀取："+file.name].join("\n");
+   try{
+    if(!/\.xlsx$/i.test(file.name))throw Error("請使用 .xlsx 檔案，不支援舊版 .xls");
+    const result=await readCards(file);
+    const repeated=imports.some(x=>x.name===file.name);
+    cards.push(...result.cards);total+=result.cards.length;
+    if(!firstNew)firstNew=sorted([...result.cards])[0].date;
+    imports.push({name:file.name,date:new Date().toISOString(),count:result.cards.length});
+    logs.push("✓ "+file.name+"：新增 "+result.cards.length.toLocaleString()+" 張（"+result.sheets.join("、")+"）"+(repeated?"；此檔名曾匯入，本次仍追加，請確認是否重複":""));
+   }catch(err){logs.push("未匯入 "+file.name+"："+err.message)}
+  }
+  if(total){
+   setDirty();refreshOptions();
+   if(firstNew)currentMonth=firstNew.slice(0,7);
+   logs.push("本次新增 "+total.toLocaleString()+" 張。原有卡片全部保留；請下載含資料 HTML 保存。");
+  }
+  render();$("status").textContent=logs.join("\n");
+ }finally{busy=false;$("files").disabled=false;$("files").value=""}
+};
+refreshOptions();render();
+</script>
+</body>
+</html>
